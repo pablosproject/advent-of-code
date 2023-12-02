@@ -40,25 +40,22 @@ func main() {
 
 func processLine(line string) int {
 	gameRex := regexp.MustCompile(`Game (\d+):`)
-	matches := gameRex.FindStringSubmatch(line)
 	index := gameRex.FindStringSubmatchIndex(line)
 
-	game, err := strconv.Atoi(matches[1])
-	if err != nil {
-		panic(err)
-	}
-
 	extractions := strings.Split(line[index[1]:], ";")
+	max := map[string]int{
+		"red":   0,
+		"green": 0,
+		"blue":  0,
+	}
 	for _, extraction := range extractions {
-		if exceedLimit(extraction) {
-			return 0
-		}
+		maxCubes(extraction, max)
 	}
 
-	return game
+	return power(max)
 }
 
-func exceedLimit(extraction string) bool {
+func maxCubes(extraction string, max map[string]int) {
 	colors := strings.Split(extraction, ",")
 
 	for _, color := range colors {
@@ -69,12 +66,16 @@ func exceedLimit(extraction string) bool {
 				if err != nil {
 					panic(err)
 				}
-				if number > cube.max {
-					return true
+				if number > max[cube.color] {
+					max[cube.color] = number
 				}
 			}
 		}
 	}
 
-	return false
+	fmt.Printf("%v\n", max)
+}
+
+func power(min map[string]int) int {
+	return min["red"] * min["green"] * min["blue"]
 }
