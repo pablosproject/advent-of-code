@@ -14,6 +14,10 @@ type number struct {
 	value      int
 }
 
+type gear struct {
+	row, col int
+}
+
 func main() {
 	file, err := os.Open("input.txt")
 	if err != nil {
@@ -26,6 +30,7 @@ func main() {
 
 	var fileMap [][]rune
 	var numbers []number
+	var gears []gear
 
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -36,19 +41,17 @@ func main() {
 		}
 		fileMap = append(fileMap, row)
 
-		// Extract all numbers
+		// Extract all numbers and gears
 		numbers = append(numbers, findNumbers(line, len(fileMap)-1)...)
+		gears = append(gears, findGears(line, len(fileMap)-1)...)
 	}
 
-	// Sum all numbers with a correct number closenumbers.
-	sum := 0
-	for _, number := range numbers {
-		if findCloseDigit(number, fileMap) {
-			sum += number.value
-		}
+	sumGearRatio := 0
+	for _, gear := range gears {
+		sumGearRatio += findGearRatio(gear, numbers)
 	}
 
-	fmt.Println(sum)
+	fmt.Printf("%d\n", sumGearRatio)
 }
 
 func findNumbers(line string, row int) []number {
@@ -60,6 +63,33 @@ func findNumbers(line string, row int) []number {
 	}
 
 	return numbers
+}
+
+func findGears(line string, row int) []gear {
+	var gears []gear
+	gearRegex := regexp.MustCompile(`\*`)
+	for _, match := range gearRegex.FindAllStringSubmatchIndex(line, -1) {
+		gears = append(gears, gear{row, match[0]})
+	}
+
+	return gears
+}
+
+func findGearRatio(gear gear, numbers []number) int {
+	var closeNumbers []number
+	for _, number := range numbers {
+		sameRow := number.row == gear.row || number.row == gear.row-1 || number.row == gear.row+1
+		sameCol := gear.col >= number.start-1 && gear.col <= number.end+1
+		if sameRow && sameCol {
+			closeNumbers = append(closeNumbers, number)
+		}
+	}
+
+	if len(closeNumbers) == 2 {
+		return closeNumbers[0].value * closeNumbers[1].value
+	}
+
+	return 0
 }
 
 func findCloseDigit(number number, fileMap [][]rune) bool {
